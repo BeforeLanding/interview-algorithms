@@ -2,44 +2,35 @@
 题目：https://leetcode.cn/problems/number-of-islands/
 题意：网格中 '1' 是陆地、'0' 是水，统计上下左右相连的陆地块数。
 
-思路：扫描网格，每遇到未访问陆地，就发现一座新岛，答案加一。
-从该格出发 DFS，把整座岛标记为 '2'，以后不会重复计数。
-沿用灵茶山艾府的访问标记思路，用显式栈替代递归，避免 Python 递归过深。
-时间 O(mn)，最坏额外空间 O(mn)。会修改 grid；保留原网格可传 [row[:] for row in grid]。
-易错：入栈时立即标记，避免同一格被重复入栈；对角相邻不算连接。
+思路：遍历数组，找到'1'也就是陆地，先将岛屿数量+1，然后从该点开始dfs，每一步都可以上下左右移动，确保将整座岛（连通的陆地部分内容）全部更新为'2'，下次遍历时不会重复访问。
 
-参考：灵茶山艾府，网格 DFS。
-https://leetcode.cn/problems/number-of-islands/solutions/2965773/ba-fang-wen-guo-de-ge-zi-cha-shang-qi-zi-9gs0/
-"""
-
+时间复杂度：O(mn)，其中 m 和 n 分别是 grid 的行数和列数。
+由于 DFS 中修改了 grid[i][j] = '2'，当我们访问一个访问过的格子时，会触发 if grid[i][j] != '1': return。
+只有首次访问一个格子时，才会继续递归，其余情况不会继续递归。每次插上一个旗子只需要 O(1) 的时间，插上至多 mn 个旗子，就需要 O(mn) 的时间。
+空间复杂度：O(mn)。最坏情况下，对于蛇形陆地、蚊香型陆地等，递归需要 O(mn) 的栈空间。
 
 class Solution:
-    def numIslands(self, grid: list[list[str]]) -> int:
-        if not grid or not grid[0]:
-            return 0
-        m, n = len(grid), len(grid[0])
+    def numIslands(self, grid: List[List[str]]) -> int:
+        n = len(grid)
+        m = len(grid[0])
+        def dfs(i:int,j:int) -> None:
+            if (
+                i < 0 or i >= n
+                or j < 0 or j >= m
+                or grid[i][j] != '1'
+            ):
+                return
+            
+            grid[i][j] = 2
+            dfs(i, j-1)
+            dfs(i,j+1)
+            dfs(i-1,j)
+            dfs(i+1,j)
+
         ans = 0
-        for i in range(m):
-            for j in range(n):
-                if grid[i][j] != "1":
-                    continue
-                ans += 1
-                grid[i][j] = "2"
-                stack = [(i, j)]
-                while stack:
-                    x, y = stack.pop()
-                    for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-                        if 0 <= nx < m and 0 <= ny < n and grid[nx][ny] == "1":
-                            grid[nx][ny] = "2"
-                            stack.append((nx, ny))
+        for i,row in enumerate(grid):
+            for j, col in enumerate(row):
+                if col == '1':
+                    dfs(i,j)
+                    ans += 1
         return ans
-
-
-if __name__ == "__main__":
-    solution = Solution()
-    assert solution.numIslands([list("1100"), list("0101"), list("0001")]) == 2
-    assert solution.numIslands([list("10"), list("01")]) == 2
-    assert solution.numIslands([["0"]]) == 0
-    assert solution.numIslands([["1"] * 300 for _ in range(300)]) == 1
-    assert solution.numIslands([]) == 0
-    print("200. 岛屿数量：通过")
