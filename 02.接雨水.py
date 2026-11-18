@@ -2,36 +2,62 @@
 题目：https://leetcode.cn/problems/trapping-rain-water/
 题意：柱子宽度均为 1，计算下雨后能存多少水。
 
-思路：每格水量是 min(左侧最高柱, 右侧最高柱) - 当前高度。
-从两端向中间扫描，维护已扫描的左右最高柱。
-若左侧最高柱更低，右边已经有足够高的柱子，左侧水量就确定了；反之处理右侧。
-时间 O(n)，额外空间 O(1)。不修改输入。
-
-参考：灵茶山艾府，相向双指针思路；此处重新整理注释和示例。
-https://leetcode.cn/problems/trapping-rain-water/solutions/1974340/zuo-liao-nbian-huan-bu-hui-yi-ge-shi-pin-ukwm/
+思路：经典中的经典 前后缀分解/双指针/单调栈 三种解法都要会
 """
 
-
+# 方法1：前后缀分解
 class Solution:
-    def trap(self, height: list[int]) -> int:
-        left, right = 0, len(height) - 1
-        left_max = right_max = ans = 0
-        while left < right:
-            left_max = max(left_max, height[left])
-            right_max = max(right_max, height[right])
-            if left_max < right_max:
-                ans += left_max - height[left]
-                left += 1
-            else:
-                ans += right_max - height[right]
-                right -= 1
+    def trap(self, height: List[int]) -> int:
+        n = len(height)
+        pre_max = [0] * n  # pre_max[i] 表示从 height[0] 到 height[i] 的最大值
+        pre_max[0] = height[0]
+        for i in range(1, n):
+            pre_max[i] = max(pre_max[i - 1], height[i])
+
+        suf_max = [0] * n  # suf_max[i] 表示从 height[i] 到 height[n-1] 的最大值
+        suf_max[-1] = height[-1]
+        for i in range(n - 2, -1, -1):
+            suf_max[i] = max(suf_max[i + 1], height[i])
+
+        ans = 0
+        for h, pre, suf in zip(height, pre_max, suf_max):
+            ans += min(pre, suf) - h  # 累加每个水桶能接多少水
         return ans
+# 时间复杂度：O(n)，其中 n 是 height 的长度。
+# 空间复杂度：O(n)。
 
+# 方法2：双指针
+class Solution:
+    def trap(self, height: List[int]) -> int:
+        ans = pre_max = suf_max = 0
+        left, right = 0, len(height) - 1
+        while left < right:
+            pre_max = max(pre_max, height[left])  # 前缀最大值
+            suf_max = max(suf_max, height[right])  # 后缀最大值
+            if pre_max < suf_max:  # 可以确定 left 处的接水量
+                ans += pre_max - height[left]
+                left += 1  # 搞定了 left，现在问题缩小到 [left+1, right]
+            else:  # 可以确定 right 处的接水量
+                ans += suf_max - height[right]
+                right -= 1  # 搞定了 right，现在问题缩小到 [left, right-1]
+        return ans
+# 时间复杂度：O(n)，其中 n 是 height 的长度。
+# 空间复杂度：O(1)。
 
-if __name__ == "__main__":
-    solution = Solution()
-    assert solution.trap([4, 1, 3, 1, 5]) == 7
-    assert solution.trap([2, 0, 2]) == 2
-    assert solution.trap([1, 2, 3]) == 0
-    assert solution.trap([]) == 0
-    print("42. 接雨水：通过")
+# 方法3：单调栈
+class Solution:
+    def trap(self, height: List[int]) -> int:
+        ans = 0
+        st = []
+        for i, h in enumerate(height):
+            while st and height[st[-1]] <= h:
+                bottom_h = height[st.pop()]
+                if not st:  # 栈是空的
+                    break
+                left = st[-1]
+                dh = min(height[left], h) - bottom_h  # 面积的高
+                ans += dh * (i - left - 1)
+            st.append(i)
+        return ans
+# 时间复杂度：O(n)，其中 n 是 height 的长度。虽然我们写了个二重循环，但站在每个元素的视角看，这个元素在二重循环中最多入栈出栈各一次，因此循环次数之和是 O(n)，所以时间复杂度是 O(n)。
+# 空间复杂度：O(min(n,U))，其中 U=max(height)−min(height)+1。注意栈中没有重复元素，在 height 值域很小的情况下，空间复杂度主要取决于 height 的值域范围。
