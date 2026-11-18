@@ -8,6 +8,7 @@
 由于 DFS 中修改了 grid[i][j] = '2'，当我们访问一个访问过的格子时，会触发 if grid[i][j] != '1': return。
 只有首次访问一个格子时，才会继续递归，其余情况不会继续递归。每次插上一个旗子只需要 O(1) 的时间，插上至多 mn 个旗子，就需要 O(mn) 的时间。
 空间复杂度：O(mn)。最坏情况下，对于蛇形陆地、蚊香型陆地等，递归需要 O(mn) 的栈空间。
+"""
 
 class Solution:
     def numIslands(self, grid: List[List[str]]) -> int:
